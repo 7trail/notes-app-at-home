@@ -57,31 +57,6 @@
         .input-container button {
             margin-left: 10px;
         }
-        @media (max-width: 600px) {
-            .input-container {
-                flex-direction: column;
-                align-items: stretch;
-            }
-            .input-container input, .input-container button {
-                margin-right: 0;
-                margin-bottom: 10px;
-            }
-            .input-container button {
-                margin-left: 0;
-            }
-        }
-		
-		@media (min-width: 600px) {
-            .input-container {
-                height: 50px;
-                align-items: stretch;
-            }
-			
-			.input-container input {
-				width: 25%;
-			}
-			
-        }
 
         .deleteCell {
             color: red;
@@ -106,6 +81,42 @@
             font-size: 0px;
             transition: font-size 0.25s ease-in-out;
         }
+        @media (max-width: 600px) {
+            .input-container {
+                flex-direction: column;
+                align-items: stretch;
+            }
+            .input-container input, .input-container button {
+                margin-right: 0;
+                margin-bottom: 10px;
+            }
+            .input-container button {
+                margin-left: 0;
+            }
+
+            .deleteParent {
+                display: none;
+            }
+
+            .deleteCell {
+                display:none;
+            }
+
+        }
+		
+		@media (min-width: 600px) {
+            .input-container {
+                height: 50px;
+                align-items: stretch;
+            }
+			
+			.input-container input {
+				width: 25%;
+			}
+			
+        }
+
+        
 
     </style>
 </head>
