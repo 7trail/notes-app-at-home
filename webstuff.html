@@ -1,0 +1,193 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+	<script src="swiped-events.min.js" ></script>
+	
+    <title>mom, can we have the notes app?</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            padding: 20px;
+            background-color: #f4f4f4;
+            margin: 0;
+            position: relative;
+            min-height: 100vh; /* Ensures the body is at least as tall as the viewport */
+            box-sizing: border-box;
+        }
+        table {
+            width: 100%;
+            border-collapse: collapse;
+			table-layout: fixed;
+            margin-top: 20px;
+        }
+        table, th, td {
+            border: 1px solid #ddd;
+        }
+        th, td {
+            padding: 8px;
+            text-align: left;
+        }
+        th {
+            background-color: #eaeaea;
+        }
+
+        td {
+            background-color: #f2f2f2;
+        }
+
+        .input-container {
+            position: fixed;
+            bottom: 0;
+            left: 0;
+            right: 0;
+            background-color: #fff;
+            border-top: 1px solid #ddd;
+            padding: 10px;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            box-shadow: 0 -2px 4px rgba(0,0,0,0.1);
+            z-index: 1000; /* Ensure it stays on top of other content */
+        }
+        .input-container input, .input-container button {
+            margin-right: 10px;
+        }
+        .input-container button {
+            margin-left: 10px;
+        }
+        @media (max-width: 600px) {
+            .input-container {
+                flex-direction: column;
+                align-items: stretch;
+            }
+            .input-container input, .input-container button {
+                margin-right: 0;
+                margin-bottom: 10px;
+            }
+            .input-container button {
+                margin-left: 0;
+            }
+        }
+		
+		@media (min-width: 600px) {
+            .input-container {
+                height: 50px;
+                align-items: stretch;
+            }
+			
+			.input-container input {
+				width: 25%;
+			}
+			
+        }
+
+        tr {
+            font-size: auto;
+            transition: font-size 0.25s ease-in-out;
+        }
+
+        tr.toDelete {
+            font-size: 0px;
+            transition: font-size 0.25s ease-in-out;
+        }
+
+    </style>
+</head>
+<body>
+    <h1>the notes app at home:</h1>
+    
+    <div class="input-container">
+        <input type="text" id="keyInput" placeholder="Enter title" />
+        <input type="text" id="valueInput" placeholder="Enter note" />
+        <button onclick="addEntry(document.getElementById('keyInput').value,document.getElementById('valueInput').value)">Add to Table</button>
+    </div>
+    
+    <table id="dictionaryTable">
+        <thead>
+            <tr>
+                <th>Title</th>
+                <th>Note</th>
+            </tr>
+        </thead>
+        <tbody>
+            <!-- Entries will be added here -->
+        </tbody>
+    </table>
+    
+    <script>
+        const tableBody = document.querySelector('#dictionaryTable tbody');
+		
+		let tableDict = {};
+		
+		function sortTable() {
+            const rows = Array.from(tableBody.querySelectorAll('tr'));
+            const sortedRows = rows.sort((a, b) => {
+                const keyA = a.querySelector('td').textContent.toLowerCase();
+                const keyB = b.querySelector('td').textContent.toLowerCase();
+                return keyA.localeCompare(keyB);
+            });
+
+            // Remove existing rows
+            while (tableBody.firstChild) {
+                tableBody.removeChild(tableBody.firstChild);
+            }
+
+            // Append sorted rows
+            sortedRows.forEach(row => tableBody.appendChild(row));
+        }
+
+        function addEntry(key,value) {
+            const keyInput = key;
+            const valueInput = value;
+
+            if (keyInput && valueInput) {
+                const newRow = document.createElement('tr');
+                const keyCell = document.createElement('td');
+                const valueCell = document.createElement('td');
+				
+				tableDict[keyInput] = valueInput;
+
+                keyCell.textContent = keyInput;
+                valueCell.textContent = valueInput;
+
+                newRow.appendChild(keyCell);
+                newRow.appendChild(valueCell);
+
+                tableBody.appendChild(newRow);
+
+                // Clear inputs
+                document.getElementById('keyInput').value = '';
+                document.getElementById('valueInput').value = '';
+				sortTable();
+            } else {
+                alert('Please enter both key and value.');
+            }
+        }
+
+        function sleep(ms) {
+            return new Promise(resolve => setTimeout(resolve, ms));
+        }
+		
+		document.addEventListener('swiped', function(e) {
+			console.log(e.target); // the element that was swiped
+			//console.log(e.detail.dir);
+			if (tableBody.contains(e.target) && e.detail.dir == "left") {
+				//alert("Hi!");
+                if (confirm("WARNING! This will delete the entry. Are you sure?")) {
+                    async function deleteFunc() {
+                        let victim = e.target.parentNode;
+                        victim.classList.add("toDelete");
+                        await sleep(240);
+                        tableBody.removeChild(victim);
+                    }
+
+                    deleteFunc();
+				    
+                }
+			}
+		});
+    </script>
+</body>
+</html>
