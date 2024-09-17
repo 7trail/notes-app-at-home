@@ -83,6 +83,20 @@
 			
         }
 
+        .deleteCell {
+            color: red;
+            cursor: pointer;
+            background-color: #ffcccc;
+        }
+
+        .deleteCell:hover {
+            text-decoration: underline;
+        }
+
+        .deleteParent {
+            width: 100px;
+        }
+
         tr {
             font-size: auto;
             transition: font-size 0.25s ease-in-out;
@@ -109,6 +123,7 @@
             <tr>
                 <th>Title</th>
                 <th>Note</th>
+                <th class="deleteParent">Delete</th>
             </tr>
         </thead>
         <tbody>
@@ -120,6 +135,14 @@
         const tableBody = document.querySelector('#dictionaryTable tbody');
 		
 		let tableDict = {};
+
+        if (localStorage.hasOwnProperty("text")) {
+            tableDict = JSON.parse(localStorage.getItem("text"));
+            for (const key in tableDict) {
+                const value = tableDict[key];
+                addEntry(key,value);
+            }
+        }
 		
 		function sortTable() {
             const rows = Array.from(tableBody.querySelectorAll('tr'));
@@ -155,6 +178,17 @@
 
                 newRow.appendChild(keyCell);
                 newRow.appendChild(valueCell);
+                
+                const deleteCell = document.createElement('td');
+                deleteCell.classList.add("deleteCell");
+                deleteCell.textContent="Remove Note";
+                deleteCell.addEventListener("click", function() {
+                    if (confirm("WARNING! This will delete the entry. Are you sure?")) {
+                        deleteElement(this.parentNode);
+                    }
+                });
+
+                newRow.appendChild(deleteCell);
 
                 tableBody.appendChild(newRow);
 
@@ -170,6 +204,15 @@
         function sleep(ms) {
             return new Promise(resolve => setTimeout(resolve, ms));
         }
+
+        async function deleteElement(victim) {
+            victim.classList.add("toDelete");
+            await sleep(240);
+            tableBody.removeChild(victim);
+            //Deletes this from the tableDict
+            delete tableDict[victim.querySelector('td').textContent];
+            localStorage.setItem("text", JSON.stringify(tableDict));
+        }
 		
 		document.addEventListener('swiped', function(e) {
 			console.log(e.target); // the element that was swiped
@@ -179,11 +222,7 @@
                 if (confirm("WARNING! This will delete the entry. Are you sure?")) {
                     async function deleteFunc() {
                         let victim = e.target.parentNode;
-                        victim.classList.add("toDelete");
-                        await sleep(240);
-                        tableBody.removeChild(victim);
-                        //Deletes this from the tableDict
-                        delete tableDict[victim.querySelector('td').textContent];
+                        await deleteElement(victim);
                     }
 
                     deleteFunc();
