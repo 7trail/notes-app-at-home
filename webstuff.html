@@ -148,6 +148,7 @@
                 const valueCell = document.createElement('td');
 				
 				tableDict[keyInput] = valueInput;
+                localStorage.setItem("text", JSON.stringify(tableDict));
 
                 keyCell.textContent = keyInput;
                 valueCell.textContent = valueInput;
@@ -181,6 +182,8 @@
                         victim.classList.add("toDelete");
                         await sleep(240);
                         tableBody.removeChild(victim);
+                        //Deletes this from the tableDict
+                        delete tableDict[victim.querySelector('td').textContent];
                     }
 
                     deleteFunc();
