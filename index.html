@@ -4,6 +4,7 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
 	<script src="swiped-events.min.js" ></script>
+    <script src="eng_synonyms.js"></script>
 	
     <title>mom, can we have the notes app?</title>
     <style>
@@ -23,7 +24,7 @@
             margin-top: 20px;
         }
         table, th, td {
-            border: 1px solid #ddd;
+            border: 1px solid #aaa;
         }
         th, td {
             padding: 8px;
@@ -34,7 +35,7 @@
         }
 
         td {
-            background-color: #f2f2f2;
+            
             word-wrap: break-word;
         }
 
@@ -78,6 +79,14 @@
             transition: font-size 0.25s ease-in-out;
         }
 
+        tbody tr {
+            background-color: #f2f2f2;
+        }
+
+        tbody tr:nth-child(odd) {
+            background-color: #d8d8d8;
+        }
+
         tr.toDelete {
             font-size: 0px;
             transition: font-size 0.25s ease-in-out;
@@ -103,6 +112,13 @@
                 display:none;
             }
 
+            #searchInput {
+                width: 95%;
+                display:block;
+                font-size: 12px;
+                margin: auto;
+            }
+
         }
 		
 		@media (min-width: 600px) {
@@ -115,6 +131,13 @@
 				width: 25%;
 			}
 			
+            #searchInput {
+                width: 75%;
+                display:block;
+                font-size: 14px;
+                margin: auto;
+            }
+
         }
 
         
@@ -123,7 +146,7 @@
 </head>
 <body>
     <h1>the notes app at home:</h1>
-    
+    <input type="text" id="searchInput" placeholder="Filter notes by text or keywords" />
     <div class="input-container">
         <input type="text" id="keyInput" placeholder="Enter title" />
         <input type="text" id="valueInput" placeholder="Enter note" />
@@ -133,9 +156,9 @@
     <table id="dictionaryTable">
         <thead>
             <tr>
-                <th>Title</th>
-                <th>Note</th>
-                <th class="deleteParent">Delete</th>
+                <th>title</th>
+                <th>note</th>
+                <th class="deleteParent">delete</th>
             </tr>
         </thead>
         <tbody>
@@ -144,56 +167,53 @@
     </table>
     
     <script>
+
         const tableBody = document.querySelector('#dictionaryTable tbody');
 		
 		let tableDict = {};
+        let filteredTable = {};
 
         if (localStorage.hasOwnProperty("text")) {
             tableDict = JSON.parse(localStorage.getItem("text"));
             for (const key in tableDict) {
                 const value = tableDict[key];
-                addEntry(key,value);
+                addEntry(key,value["text"], value["tags"]);
             }
         }
 		
 		function sortTable() {
-            const rows = Array.from(tableBody.querySelectorAll('tr'));
+            /*const rows = Array.from(tableBody.querySelectorAll('tr'));
             const sortedRows = rows.sort((a, b) => {
                 const keyA = a.querySelector('td').textContent.toLowerCase();
                 const keyB = b.querySelector('td').textContent.toLowerCase();
                 return keyA.localeCompare(keyB);
-            });
-
+            });*/
+            let keys = Object.keys(filteredTable).sort();
             // Remove existing rows
             while (tableBody.firstChild) {
                 tableBody.removeChild(tableBody.firstChild);
             }
 
             // Append sorted rows
-            sortedRows.forEach(row => tableBody.appendChild(row));
-        }
+            /*sortedRows.forEach(row => {
+                if (row.querySelector('td').textContent in filteredTable) {
+                    tableBody.appendChild(row);
+                }
+            });*/
 
-        function addEntry(key,value) {
-            const keyInput = key;     
-            const valueInput = value;
-
-            if (keyInput && valueInput) {
+            for (let key of keys) {
+                const value = filteredTable[key];
                 const newRow = document.createElement('tr');
                 const keyCell = document.createElement('td');
                 const valueCell = document.createElement('td');
-				
-				tableDict[keyInput] = valueInput;
-                localStorage.setItem("text", JSON.stringify(tableDict));
-
-                keyCell.textContent = keyInput;
-                valueCell.textContent = valueInput;
-
+                keyCell.textContent = key;
+                valueCell.textContent = value["text"];
                 newRow.appendChild(keyCell);
                 newRow.appendChild(valueCell);
                 
                 const deleteCell = document.createElement('td');
                 deleteCell.classList.add("deleteCell");
-                deleteCell.textContent="Remove Note";
+                deleteCell.textContent="remove note";
                 deleteCell.addEventListener("click", function() {
                     if (confirm("WARNING! This will delete the entry. Are you sure?")) {
                         deleteElement(this.parentNode);
@@ -203,11 +223,49 @@
                 newRow.appendChild(deleteCell);
 
                 tableBody.appendChild(newRow);
+            }
+        }
+
+        function addEntry(key,value, tags) {
+            const keyInput = key;     
+            const valueInput = value;
+
+            if (keyInput && valueInput) {
+                let valueSynonyms = [];
+
+                if (tags !== undefined) { // Simply copy existing tags if available
+                    valueSynonyms = tags;
+                } else { // Query the synonyms text to get what we need
+                    let words = valueInput.replace(/[.,\/#!$%\^&\*;:{}=\-_`~()]/g,"").split(" ");
+                    words = words.concat(keyInput.split(" "));
+                    for (let word of words) {
+                        word = word.toLowerCase();
+
+                        if (word in synonyms) { // Loop over every word
+                            for (let syn of synonyms[word]) {
+                                syn = syn.toLowerCase();
+                                if (!(word in valueSynonyms)) { // Make sure each tag is unique
+                                    valueSynonyms.push(syn);
+                                }
+                            }
+                        }
+                        valueSynonyms.push(word);
+                    }
+                    console.log(valueSynonyms);
+                }
+                
+
+				tableDict[keyInput] = {"text":valueInput, "tags":valueSynonyms};
+                localStorage.setItem("text", JSON.stringify(tableDict));
+                console.log({"text":valueInput, "tags":valueSynonyms});
+                
+
+                //THIS IS WHERE THE ROW CREATION CODE WENT
 
                 // Clear inputs
                 document.getElementById('keyInput').value = '';
                 document.getElementById('valueInput').value = '';
-				sortTable();
+                filterTable("");
             } else {
                 alert('Please enter both key and value.');
             }
@@ -225,20 +283,65 @@
             delete tableDict[victim.querySelector('td').textContent];
             localStorage.setItem("text", JSON.stringify(tableDict));
         }
+
+        function filterTable(queryText) {
+            queryText = queryText.toLowerCase();
+            if (queryText == "") {
+                filteredTable = tableDict;
+            } else {
+                filteredTable = {};
+                for (let [key,value] of Object.entries(tableDict)) { // Iterate over TableDict to get each note
+                    for (let word of queryText.split(" ")) { // Check each word in the query
+                        if (word.length == 0) {
+                            continue;
+                        }
+                        word = word.toLowerCase();
+                        if (value["tags"].includes(word) || key.toLowerCase().includes(word) || value["text"].toLowerCase().includes(word)) { // Check if they match a tag OR are in the original text
+                            filteredTable[key] = value;
+                            continue;
+                        }
+                    }
+                }
+            }
+            sortTable();
+ 
+        }
+
+        document.getElementById('searchInput').addEventListener('input', function() {
+                filterTable(document.getElementById("searchInput").value);
+            }
+        );
+
+        filterTable("");
 		
 		document.addEventListener('swiped', function(e) {
 			console.log(e.target); // the element that was swiped
 			//console.log(e.detail.dir);
-			if (tableBody.contains(e.target) && e.detail.dir == "left") {
+			if (tableBody.contains(e.target)) {
 				//alert("Hi!");
-                if (confirm("WARNING! This will delete the entry. Are you sure?")) {
-                    async function deleteFunc() {
-                        let victim = e.target.parentNode;
-                        await deleteElement(victim);
-                    }
+                if (e.detail.dir == "left") {
+                    if (confirm("WARNING! This will delete the entry. Are you sure?")) {
+                        async function deleteFunc() {
+                            let victim = e.target.parentNode;
+                            await deleteElement(victim);
+                        }
 
-                    deleteFunc();
-				    
+                        deleteFunc();
+                        
+                    }
+                }
+                if (e.detail.dir == "right") {
+                    let tagString = "TAGS: \n\n";
+                    let tags = tableDict[e.target.parentNode.querySelector('td').textContent]["tags"];
+                    for (let i = 0; i < Math.min(tags.length, 50); i++) {
+                        tagString += tags[i];
+                        if (i < tags.length-1) {
+                            tagString += ", ";
+                        } else {
+                            tagString += ".";
+                        }
+                    }
+                    alert(tagString);
                 }
 			}
 		});
